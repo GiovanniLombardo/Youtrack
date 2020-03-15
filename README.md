@@ -14,8 +14,8 @@ instance keeping account of duplication etc.. Basically the restore of a backup 
 data currently in use. 
 
 ### Components
-At the time of this writing the idea is to have to command line executables, one for backing up
-selectively issues of projects of a youtrack server instance and another to perform content 
+At the time of this writing the idea is two have to command line executables, one for backing
+up selectively issues of projects of a youtrack server instance and another to perform content 
 wise restoration of issue on the same or other youtrack instance. 
 
 ### Backup component: how does it work?
