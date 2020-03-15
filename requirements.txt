@@ -1,3 +1,4 @@
+colorama
 httplib2==0.17.0
 six==1.14.0
 youtrack==0.1.52
