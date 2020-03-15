@@ -9,7 +9,7 @@ from logging import NOTSET, INFO, WARNING, ERROR, DEBUG
 from logging import getLogRecordFactory, setLogRecordFactory, basicConfig, getLogger, LogRecord
 from os.path import basename
 from platform import system as system_platform
-from signal import signal, SIGINT, SIG_IGN
+from signal import signal, SIGINT
 from sys import argv, stdout
 from typing import Any, Dict, List, Optional as Opt
 from types import FrameType
@@ -171,67 +171,74 @@ def backup(args, connection, logger):
     # Generates a temporary directory
     tempdir = Path(mkdtemp())
 
-    # Iterates over projects
-    for prj in connection.getProjectIds():
+    try:
 
-        # Filters on project names
-        if args.prjs and prj not in args.prjs:
-            logger.debug(f'Skipped project: {prj}')
-            continue
+        # Iterates over projects
+        for prj in connection.getProjectIds():
 
-        # Gets the number of issue [otherwise only 10 are downloaded by default]
-        no_issue = connection.getNumberOfIssues(filter=prj)
-
-        # Iterates over issues
-        for issue in connection.getIssues(prj, '', '', max=no_issue):
-
-            # Filters on issue ids
-            if args.iid and issue.id not in args.iid:
-                logger.debug(f'Skipped issue: {issue.id}')
+            # Filters on project names
+            if args.prjs and prj not in args.prjs:
+                logger.debug(f'Skipped project: {prj}')
                 continue
 
-            # Acquires some issue metadata
-            description = issue.description[:issue.description.find(chr(10))].replace("#", "")
-            logger.info(f'Processing: {issue.id} {description}')
+            # Gets the number of issue [otherwise only 10 are downloaded by default]
+            no_issue = connection.getNumberOfIssues(filter=prj)
 
-            names = []
+            # Iterates over issues
+            for issue in connection.getIssues(prj, '', '', max=no_issue):
 
-            # Iterates over attachments
-            for idx, attachment in enumerate(issue.getAttachments()):
-                # Acquires some attachment metadata
-                filename = '_'.join([issue.id, attachment.name])
-                logger.info(f'Processing #{idx} attachment: {filename}')
+                # Filters on issue ids
+                if args.iid and issue.id not in args.iid:
+                    logger.debug(f'Skipped issue: {issue.id}')
+                    continue
 
-                # Write the attachment on disk
-                names.append(str(tempdir / filename))
-                with open(names[-1], 'wb') as f:
-                    logger.info(f'Writing content: {Path(f.name).parts[-1]}')
-                    f.write(attachment.getContent().read())
+                # Acquires some issue metadata
+                description = issue.description[:issue.description.find(chr(10))].replace("#", "")
+                logger.info(f'Processing: {issue.id} {description}')
 
-                # Writes attachment metadata on disk
-                names.append(str(tempdir / f'{filename}.json'))
+                names = []
+
+                # Iterates over attachments
+                for idx, attachment in enumerate(issue.getAttachments()):
+                    # Acquires some attachment metadata
+                    filename = '_'.join([issue.id, attachment.name])
+                    logger.info(f'Processing #{idx} attachment: {filename}')
+
+                    # Write the attachment on disk
+                    names.append(str(tempdir / filename))
+                    with open(names[-1], 'wb') as f:
+                        logger.info(f'Writing content: {Path(f.name).parts[-1]}')
+                        f.write(attachment.getContent().read())
+
+                    # Writes attachment metadata on disk
+                    names.append(str(tempdir / f'{filename}.json'))
+                    with open(names[-1], 'w') as f:
+                        logger.info(f'Writing metadata: {Path(f.name).parts[-1]}')
+                        f.write(dumps(attachment.to_dict()))
+
+                # Writes the issue data on disk
+                names.append(str(tempdir / f'{issue.id}.json'))
                 with open(names[-1], 'w') as f:
-                    logger.info(f'Writing metadata: {Path(f.name).parts[-1]}')
-                    f.write(dumps(attachment.to_dict()))
+                    logger.info(f'Writing issue: {Path(f.name).parts[-1]}')
+                    f.write(dumps(issue.to_dict()))
 
-            # Writes the issue data on disk
-            names.append(str(tempdir / f'{issue.id}.json'))
-            with open(names[-1], 'w') as f:
-                logger.info(f'Writing issue: {Path(f.name).parts[-1]}')
-                f.write(dumps(issue.to_dict()))
+                z_name = str(tempdir / f'{issue.id}.zip')
+                with ZipFile(z_name, 'w', ZIP_DEFLATED, compresslevel=9) as z:
+                    logger.info(f'Created archive: {Path(z_name).parts[-1]}')
+                    for name in names:
+                        z.write(filename=name, arcname=Path(name).parts[-1])
+                        unlink(name)
 
-            z_name = str(tempdir / f'{issue.id}.zip')
-            with ZipFile(z_name, 'w', ZIP_DEFLATED, compresslevel=9) as z:
-                logger.info(f'Created archive: {Path(z_name).parts[-1]}')
-                for name in names:
-                    z.write(name)
-                    unlink(name)
+                # Moves the zip in the output folder
+                move(z_name, str(args.output / f'{issue.id}.zip'))
 
-            # Moves the zip in the output folder
-            move(z_name, str(args.output / f'{issue.id}.zip'))
+    except Exception as e:
+        logger.error(f'{str(e)}')
 
-    # Removes the empty temporary folder
-    rmtree(tempdir)
+    finally:
+
+        # Removes the empty temporary folder
+        rmtree(tempdir)
 
 
 def usage(args: List[str]) -> Namespace:
