@@ -57,3 +57,8 @@ optional arguments:
                         When given only the issues with the given id are
                         considered.
 ```
+
+### Behavioural choices
+
++ The software has been designed assuming **project names will not ends with `-\d+\.zip`**. If your settings cannot
+follow that constraint this software will not work correctly in such cases. 
