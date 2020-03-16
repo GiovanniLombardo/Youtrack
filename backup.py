@@ -176,12 +176,31 @@ def backup(args, connection, logger):
         # Iterates over projects
         for prj in connection.getProjectIds():
 
+            # Acquiring project data
+            project = connection.getProject(prj)
+            logger.info(f'\nProject: {project.name}')
+
+            # Writing project data
+            prj_name = str(tempdir / f'{prj}.json')
+            with open(prj_name, 'w') as f:
+                logger.debug(f'Writing project data: {str(prj_name)}')
+                f.write(dumps(project.to_dict()))
+
+            # Archiving project data
+            z_name = str(tempdir / f'{prj}.zip')
+            with ZipFile(z_name, 'w', ZIP_DEFLATED, compresslevel=9) as z:
+                logger.info(f'Project archive: {Path(z_name).parts[-1]}')
+                z.write(filename=prj_name, arcname=f'{prj}.json')
+
+            # Moves the zip in the output folder
+            move(z_name, str(args.output /  f'{prj}.zip'))
+
             # Filters on project names
             if args.prjs and prj not in args.prjs:
                 logger.debug(f'Skipped project: {prj}')
                 continue
 
-            # Gets the number of issue [otherwise only 10 are downloaded by default]
+            # Gets the number of issues [otherwise only 10 are downloaded by default]
             no_issue = connection.getNumberOfIssues(filter=prj)
 
             # Iterates over issues
@@ -193,8 +212,7 @@ def backup(args, connection, logger):
                     continue
 
                 # Acquires some issue metadata
-                description = issue.description[:issue.description.find(chr(10))].replace("#", "")
-                logger.info(f'Processing: {issue.id} {description}')
+                logger.info(f'\nIssue: {issue.id} {issue.summary}')
 
                 names = []
 
@@ -202,29 +220,30 @@ def backup(args, connection, logger):
                 for idx, attachment in enumerate(issue.getAttachments()):
                     # Acquires some attachment metadata
                     filename = '_'.join([issue.id, attachment.name])
-                    logger.info(f'Processing #{idx} attachment: {filename}')
+                    logger.info(f'Attachment #{idx}: {filename}')
 
                     # Write the attachment on disk
                     names.append(str(tempdir / filename))
                     with open(names[-1], 'wb') as f:
-                        logger.info(f'Writing content: {Path(f.name).parts[-1]}')
+                        logger.debug(f'Writing content: {Path(f.name).parts[-1]}')
                         f.write(attachment.getContent().read())
 
                     # Writes attachment metadata on disk
                     names.append(str(tempdir / f'{filename}.json'))
                     with open(names[-1], 'w') as f:
-                        logger.info(f'Writing metadata: {Path(f.name).parts[-1]}')
+                        logger.debug(f'Writing metadata: {Path(f.name).parts[-1]}')
                         f.write(dumps(attachment.to_dict()))
 
                 # Writes the issue data on disk
                 names.append(str(tempdir / f'{issue.id}.json'))
                 with open(names[-1], 'w') as f:
-                    logger.info(f'Writing issue: {Path(f.name).parts[-1]}')
+                    logger.debug(f'Writing issue_path: {Path(f.name).parts[-1]}')
                     f.write(dumps(issue.to_dict()))
 
+                # Archiving issue data
                 z_name = str(tempdir / f'{issue.id}.zip')
                 with ZipFile(z_name, 'w', ZIP_DEFLATED, compresslevel=9) as z:
-                    logger.info(f'Created archive: {Path(z_name).parts[-1]}')
+                    logger.info(f'Backup archive: {Path(z_name).parts[-1]}')
                     for name in names:
                         z.write(filename=name, arcname=Path(name).parts[-1])
                         unlink(name)
@@ -305,6 +324,7 @@ def main(args: Namespace) -> None:
 
     logger.info(f'TARGET: `{args.url}`')
     logger.debug(f'TOKEN:  `{args.token}`')
+    logger.info(f'OUTPUT: `{args.output}`')
 
     try:
         connection = yt(args.url, token=args.token)
