@@ -1,5 +1,5 @@
 """
-It allows custom selective youtrack project's issue backup.
+It allows custom selective YouTrack project's issue backup.
 """
 
 from argparse import ArgumentParser, Namespace
@@ -20,6 +20,7 @@ from shutil import move, rmtree
 from os import unlink, makedirs
 from json import dumps
 from pathlib import Path
+from traceback import format_exc
 
 
 major = 1
@@ -35,8 +36,8 @@ class LoggingRecordFactoryColorama:
     levels_map = {
         INFO: Fore.LIGHTBLUE_EX + Style.DIM,
         DEBUG: Fore.GREEN + Style.BRIGHT,
-        WARNING: Fore.LIGHTYELLOW_EX + Style.DIM,
-        ERROR: Fore.LIGHTRED_EX + Style.DIM,
+        WARNING: Fore.YELLOW + Style.DIM,
+        ERROR: Fore.RED + Style.DIM,
         NOTSET: Fore.RESET
     }
 
@@ -59,7 +60,7 @@ class LoggingRecordFactoryColorama:
 
     def __call__(self, *args: Any, **kwargs: Any) -> LogRecord:
         """
-        It adds the color_attr and reset_attr attribute'values  according to the given levels_map, to the kwargs of the
+        It adds the color_attr and reset_attr attribute's value according to the given levels_map, to the kwargs of the
         record built and returned by the existing_factory, and returns it to the caller.
 
         :param args:    The positional args to pass to the existing_factory.
@@ -146,7 +147,7 @@ def sigint_handler(signum: int, frame: FrameType) -> None:
     :rtype: None.
     """
 
-    signum, frame = frame, signum
+    _, _ = frame, signum
     getLogger(__name__).warning('Interrupt received..')
     exit(0)
 
@@ -178,6 +179,11 @@ def backup(args, connection, logger):
 
             # Acquiring project data
             project = connection.getProject(prj)
+
+            # Skips not requested projects
+            if args.prjs and project and project.id not in args.prjs:
+                continue
+
             logger.info(f'\nProject: {project.name}')
 
             # Writing project data
@@ -193,7 +199,7 @@ def backup(args, connection, logger):
                 z.write(filename=prj_name, arcname=f'{prj}.json')
 
             # Moves the zip in the output folder
-            move(z_name, str(args.output /  f'{prj}.zip'))
+            move(z_name, str(args.output / f'{prj}.zip'))
 
             # Filters on project names
             if args.prjs and prj not in args.prjs:
@@ -252,7 +258,7 @@ def backup(args, connection, logger):
                 move(z_name, str(args.output / f'{issue.id}.zip'))
 
     except Exception as e:
-        logger.error(f'{str(e)}')
+        logger.error(f'{format_exc()}')
 
     finally:
 
@@ -281,7 +287,6 @@ def usage(args: List[str]) -> Namespace:
         issueids='When given only the issues with the given id are considered.',
     )
 
-    logger = getLogger(__name__)
     parser = ArgumentParser(description=helps['description'])
 
     # Mandatory arguments

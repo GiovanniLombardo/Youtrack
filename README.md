@@ -1,40 +1,54 @@
 ## Youtrack-Exchange
 
-### Aim of the project
-The project main aim is to generate tooling for custom selective backup and restore of issues 
-hosted on JetBrains(r) YouTrack servers. With those tooling users are empowered to transfer the 
-knowledge encoded into the content of the issues between different systems on different work 
-domains. My use case for example is to share the knowledge acquired on some personal projects 
-stored on the JetBrains(r) YouTrack server instance running on my laptop with the JetBrains(r) 
-YouTrack server running on the computer I use at work and vice versa. 
+Allows project and issues exchange between different instances of youtrack servers.
 
-The JetBrains(r) YouTrack Web UI already exposes a backup feature able to save issues and 
-projects but, in my humble opinion, with huge lack of granularity. It can either make a backup 
-or not make it. It cannot, as far as I know, backing up only a subset of the available issues 
-and restore their content on a different JetBrains(r) YouTrack server instance keeping account
-of differences, duplication, etc.. Basically the restore of a backup overwrites the the current 
-data. Moreover, the backup produced by a JetBrains(r) YouTrack server instance version may 
-require further conversion steps in order to be used with newer JetBrains(r) YouTrack server 
-instances. 
+### Table of contents
+
++ [Aim of the project](https://github.com/Vita-Power/bridge#scope)
++ [Components](https://github.com/Vita-Power/bridge#details)
++ [Backup: how does it work?](https://github.com/Vita-Power/bridge#prerequisites)
++ [Backup: usage](https://github.com/Vita-Power/bridge#building)
++ [Restore: how does it work?](https://github.com/Vita-Power/bridge#running)
++ [Restore: how does it work?](https://github.com/Vita-Power/bridge#running)
+
+### Aim of the project
+
+The project main aim is to generate tooling for custom selective backup and restore of issues 
+hosted on `JetBrains(r) YouTrack` servers. With those tooling users are empowered to transfer 
+the knowledge encoded into the content of the issues between different systems on different work 
+domains. My use case for instance is to share the knowledge acquired on some personal projects 
+stored on the `JetBrains(r) YouTrack` server instance running on my laptop with the `JetBrains(r) 
+YouTrack` server running on the computer I use at work and vice versa. 
+
+The `JetBrains(r) YouTrack` Web UI already exposes a backup feature able to save issues and 
+projects but, in my humble opinion, with huge lack of granularity. It can either make a backup
+of the whole content or not make it. It does not, as far as I know, allow backing up only a 
+subset of the available issues and restore their content on a different `JetBrains(r) YouTrack`
+server instance keeping account of differences, duplication, etc. Basically the restore of a 
+backup overwrites the current data. Moreover, the backup produced by a `JetBrains(r) YouTrack` 
+server instance version may require further conversion steps in order to be used with newer 
+`JetBrains(r) YouTrack` server instances. 
 
 ### Components
+
 At the time of this writing the idea is to have two command line executables: one for backing
-up selectively issues of projects of a given JetBrains(r) YouTrack server instance and another 
-one to perform "content wise" restoration of issues on a different JetBrains(r) YouTrack server 
+up selectively issues of projects of a given `JetBrains(r) YouTrack` server instance and another 
+one to perform "content wise" restoration of issues on a different `JetBrains(r) YouTrack` server 
 instance. 
 
-##### Backup: how does it work?
-The backup executable expects getting from command line the `URL` of the YouTrack instance, the 
-access token of the YouTrack instance and the output folder where the issues and their data will
-be stored. The default `backup all` behaviour can be customized by selecting issues and projects 
-to be backed up by specifying the corresponding command line option and relative arguments. 
+### Backup: how does it work?
 
-The backup utility will then download all the selected issues of the selected projects, along
-with their metadata (actually unused), attachments, `[todo]` comments and comments attachments; 
-`[todo]` in a sequential fashion, and will put them in a compressed not `[todo]` encrypted 
-archive in the given `output` folder. 
+The backup executable expects getting from command line the `URL` of the `YouTrack` instance, the 
+access token of the `YouTrack` instance and the output folder where the issues and their data will
+be stored. The default `backup all` behaviour can be customized by selecting issues and projects to 
+be backed up by specifying the corresponding command line option and relative arguments. 
 
-##### Backup: usage
+The backup utility will then download all the selected issues of the selected projects, along with 
+their metadata (actually unused), attachments, comments and their data sequentially, and will put 
+them in an in-clear compressed archive inside the given `output` folder. 
+
+### Backup: usage
+
 Here is what the output of the backup utility looks like when invoked with the `--help` or `-h` 
 option at the command line. 
 
@@ -64,9 +78,11 @@ optional arguments:
                         considered.
 ```
 
-##### Restore: how does it work?
+### Restore: how does it work?
 
-##### Restore: usage
+
+### Restore: usage
+
 
 ### Behavioural choices
 
